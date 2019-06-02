@@ -2,21 +2,16 @@
 
 using namespace std;
 
-int Stego::hide()
+Stego::Stego(char* contpyt)
 {
-	cout << "Введите путь для контейнера: ";
-	char* contpyt;
-	contpyt = new char[600];
-	cin >> contpyt;
-	cout << endl;
-	string kont = checkKont(contpyt);
+	PathToContainer = contpyt;
+};
+
+string Stego::hide(char* mespyt)
+{
+	string kont = checkKont(1);
 	while (kont.find("  ") != string::npos)
 		kont.replace (kont.find("  "),2," ");
-	cout << "Введите путь для сообщения: ";
-	char* mespyt;
-	mespyt = new char[600];
-	cin >> mespyt;
-	cout << endl;
 	string stroka = checkMessage(mespyt, kont);
 	int cimvol = stroka.length();
 	int cek[cimvol*8];
@@ -53,23 +48,19 @@ int Stego::hide()
 		else
 			fin[i] = kont[j];
 	}
-	ofstream megasecret(contpyt);
-	for(i=0; i < razmer; i++)
+	ofstream megasecret(PathToContainer);
+	string HiddenMessage;
+	for(i=0; i < razmer; i++) {
 		megasecret << fin[i];
+		HiddenMessage += fin[i];
+	}
 	megasecret.close();
-	delete [] contpyt;
-	delete [] mespyt;
-	cout << "Сообщение успешно спрятано!\n\nНадеюсь, Вам понравилась моя работа.\nДо свидания!\n\n";
-	return 0;
+	return HiddenMessage;
 }
 
-int Stego::extract()
+string Stego::extract()
 {
-	cout << "Введите путь для контейнера: ";
-	char* contpyt;
-	contpyt = new char[6000];
-	cin >> contpyt;
-	string text = checkKont(contpyt);
+	string text = checkKont(2);
 	int zifr = checkZifr(text);
 	int message[zifr];
 	int j = 0;
@@ -82,23 +73,21 @@ int Stego::extract()
 			message[j-1] = 1;
 		}
 	}
+	string Message;
 	char topsekret;
 	int i=0;
-	cout << "\nСообщение из контейнера: ";
 	while(true) {
 		topsekret = 0;
 		for(j = 7; j >= 0; j--) {
 			topsekret += ipow(2,(j)) * message[i];
 			i++;
 		}
-		cout << topsekret;
+		Message += topsekret;
 		if(i >= zifr)
 			break;
 	}
-	//remove(contpyt);
-	delete [] contpyt;
-	cout << "\nКонтейнер был удалён ради вашей безопасности!\n\nНадеюсь, Вам понравилась моя работа.\nДо свидания!\n\n";
-	return 0;
+	//remove(PathToContainer);
+	return Message;
 }
 
 int Stego::ipow(int a,int b)
@@ -109,9 +98,9 @@ int Stego::ipow(int a,int b)
 		return 1;
 }
 
-inline string Stego::checkKont(char* contpyt)
+inline string Stego::checkKont(const int& what)
 {
-	ifstream file(contpyt);
+	ifstream file(PathToContainer);
 	if (!(file.is_open()))
 		throw stego_error("Контейнер не найден!!!\nПожалуйста, проверьте правильно ли Вы указали путь для контейнера!!!\n");
 	long file_size;
@@ -122,8 +111,15 @@ inline string Stego::checkKont(char* contpyt)
 		throw stego_error("Контейнер пустой!!!\n");
 	string text;
 	string kont;
-	while(getline(file,text))
-		kont += text + "\n";
+	int Investigator = 0;
+	while(getline(file,text)) {
+		if (Investigator > 0 && what == 1)
+			kont += " ";
+		if (Investigator > 0 && what == 2)
+			kont += "_";
+		kont += text;
+		Investigator++;
+	}
 	file.close();
 	return kont;
 }
@@ -137,9 +133,14 @@ inline string Stego::checkMessage(char* mespyt, string& kont)
 	ifstream mes(mespyt);
 	if (!(mes.is_open()))
 		throw stego_error("Сообщение не найдено!!!\nПожалуйста, проверьте правильно ли Вы указали путь для сообщения!!!\n");
-	string strok, stroka;
-	while(getline(mes,strok))
-		stroka += strok + "\n";
+	string stroka, strok;
+	int Investigator = 0;
+	while(getline(mes,strok)) {
+		if (Investigator > 0)
+			kont += " ";
+		stroka += strok;
+		Investigator++;
+	}
 	mes.close();
 	int cimvol = stroka.length();
 	if (cimvol == 0)
